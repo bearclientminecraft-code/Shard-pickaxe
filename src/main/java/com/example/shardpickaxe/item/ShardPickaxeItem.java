@@ -28,11 +28,8 @@ public class ShardPickaxeItem extends Item {
 
     public static ItemStack createFresh() {
         ItemStack stack = new ItemStack(com.example.shardpickaxe.ShardPickaxeMod.SHARD_PICKAXE);
-
-        // Фиолетовое название
         stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Shard Pickaxe").formatted(Formatting.LIGHT_PURPLE));
 
-        // Таймер
         NbtCompound nbt = new NbtCompound();
         nbt.putLong("CreatedAt", System.currentTimeMillis());
         stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
@@ -72,21 +69,9 @@ public class ShardPickaxeItem extends Item {
             return false;
         }
 
-        // Плоская 3x3
-        Direction facing = player.getHorizontalFacing();
-        Direction.Axis axis = facing.getAxis();
-
-        for (int a = -1; a <= 1; a++) {
-            for (int b = -1; b <= 1; b++) {
-                if (a == 0 && b == 0) continue;
-
-                BlockPos target = (axis == Direction.Axis.X) ? center.add(0, a, b) : center.add(a, b, 0);
-                // исправление: center не определён, используем pos
-            }
+        if (world instanceof ServerWorld serverWorld) {
+            breakFlat3x3(serverWorld, pos, player);
         }
-
-        // Правильная 3x3
-        breakFlat3x3((ServerWorld) world, pos, player);
 
         return super.postMine(stack, world, state, pos, miner);
     }
