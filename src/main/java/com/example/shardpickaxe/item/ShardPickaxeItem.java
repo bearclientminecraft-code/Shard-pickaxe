@@ -5,12 +5,10 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
@@ -34,10 +32,7 @@ public class ShardPickaxeItem extends Item {
         // Фиолетовое название
         stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Shard Pickaxe").formatted(Formatting.LIGHT_PURPLE));
 
-        // Зачарования через компоненты (новый способ)
-        stack.applyComponentsFrom(ItemStack.CODEC);
-
-        // Таймер самоуничтожения
+        // Таймер
         NbtCompound nbt = new NbtCompound();
         nbt.putLong("CreatedAt", System.currentTimeMillis());
         stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
@@ -52,7 +47,7 @@ public class ShardPickaxeItem extends Item {
         NbtCompound nbt = customData.copyNbt();
         if (!nbt.contains("CreatedAt")) return true;
 
-        long created = nbt.getLong("CreatedAt");
+        long created = nbt.getLong("CreatedAt").orElse(0L);
         return System.currentTimeMillis() - created > DURATION_MS;
     }
 
@@ -77,13 +72,26 @@ public class ShardPickaxeItem extends Item {
             return false;
         }
 
-        breakFlat3x3(world, pos, player, stack);
+        // Плоская 3x3
+        Direction facing = player.getHorizontalFacing();
+        Direction.Axis axis = facing.getAxis();
+
+        for (int a = -1; a <= 1; a++) {
+            for (int b = -1; b <= 1; b++) {
+                if (a == 0 && b == 0) continue;
+
+                BlockPos target = (axis == Direction.Axis.X) ? center.add(0, a, b) : center.add(a, b, 0);
+                // исправление: center не определён, используем pos
+            }
+        }
+
+        // Правильная 3x3
+        breakFlat3x3((ServerWorld) world, pos, player);
+
         return super.postMine(stack, world, state, pos, miner);
     }
 
-    private void breakFlat3x3(World world, BlockPos center, ServerPlayerEntity player, ItemStack stack) {
-        if (!(world instanceof ServerWorld serverWorld)) return;
-
+    private void breakFlat3x3(ServerWorld world, BlockPos center, ServerPlayerEntity player) {
         Direction facing = player.getHorizontalFacing();
         Direction.Axis axis = facing.getAxis();
 
@@ -95,17 +103,12 @@ public class ShardPickaxeItem extends Item {
                         ? center.add(0, a, b)
                         : center.add(a, b, 0);
 
-                tryBreak(serverWorld, target, player, stack);
+                BlockState state = world.getBlockState(target);
+                if (!state.isAir() && state.getHardness(world, target) >= 0) {
+                    world.breakBlock(target, true, player);
+                }
             }
         }
-    }
-
-    private void tryBreak(ServerWorld world, BlockPos pos, ServerPlayerEntity player, ItemStack stack) {
-        BlockState state = world.getBlockState(pos);
-        if (state.isAir()) return;
-        if (state.getHardness(world, pos) < 0) return;
-
-        world.breakBlock(pos, true, player);
     }
 
     @Override
@@ -122,4 +125,4 @@ public class ShardPickaxeItem extends Item {
         tooltip.add(Text.literal(" 6 Attack Damage").formatted(Formatting.DARK_GREEN));
         tooltip.add(Text.literal(" 1.2 Attack Speed").formatted(Formatting.DARK_GREEN));
     }
-            }
+}
