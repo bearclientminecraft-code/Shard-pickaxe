@@ -18,7 +18,7 @@ public class ShardCommands {
                                 CommandManager.RegistrationEnvironment environment) {
         dispatcher.register(
                 literal("shard")
-                        .requires(source -> source.hasPermissionLevel(2))
+                        .requires(source -> true) // временно без проверки прав
                         .then(literal("give")
                                 .then(literal("pickaxe")
                                         .executes(ShardCommands::givePickaxe)
