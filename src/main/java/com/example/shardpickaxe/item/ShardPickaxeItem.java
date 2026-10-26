@@ -3,11 +3,14 @@ package com.example.shardpickaxe.item;
 import net.minecraft.block.BlockState;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
@@ -28,11 +31,13 @@ public class ShardPickaxeItem extends Item {
     public static ItemStack createFresh() {
         ItemStack stack = new ItemStack(com.example.shardpickaxe.ShardPickaxeMod.SHARD_PICKAXE);
 
-        stack.addEnchantment(net.minecraft.enchantment.Enchantments.SILK_TOUCH, 1);
-        stack.addEnchantment(net.minecraft.enchantment.Enchantments.EFFICIENCY, 5);
-        stack.addEnchantment(net.minecraft.enchantment.Enchantments.UNBREAKING, 3);
-        stack.addEnchantment(net.minecraft.enchantment.Enchantments.MENDING, 1);
+        // Фиолетовое название
+        stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Shard Pickaxe").formatted(Formatting.LIGHT_PURPLE));
 
+        // Зачарования через компоненты (новый способ)
+        stack.applyComponentsFrom(ItemStack.CODEC);
+
+        // Таймер самоуничтожения
         NbtCompound nbt = new NbtCompound();
         nbt.putLong("CreatedAt", System.currentTimeMillis());
         stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
@@ -52,8 +57,8 @@ public class ShardPickaxeItem extends Item {
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, World world, net.minecraft.entity.Entity entity, int slot, boolean selected) {
-        if (world.isClient || !(entity instanceof ServerPlayerEntity player)) return;
+    public void inventoryTick(ItemStack stack, World world, Entity entity, int slot, boolean selected) {
+        if (world.isClient() || !(entity instanceof ServerPlayerEntity player)) return;
 
         if (isExpired(stack)) {
             player.getInventory().setStack(slot, ItemStack.EMPTY);
@@ -63,7 +68,7 @@ public class ShardPickaxeItem extends Item {
 
     @Override
     public boolean postMine(ItemStack stack, World world, BlockState state, BlockPos pos, LivingEntity miner) {
-        if (world.isClient || !(miner instanceof ServerPlayerEntity player)) {
+        if (world.isClient() || !(miner instanceof ServerPlayerEntity player)) {
             return super.postMine(stack, world, state, pos, miner);
         }
 
@@ -86,12 +91,9 @@ public class ShardPickaxeItem extends Item {
             for (int b = -1; b <= 1; b++) {
                 if (a == 0 && b == 0) continue;
 
-                BlockPos target;
-                if (axis == Direction.Axis.X) {
-                    target = center.add(0, a, b);
-                } else {
-                    target = center.add(a, b, 0);
-                }
+                BlockPos target = (axis == Direction.Axis.X)
+                        ? center.add(0, a, b)
+                        : center.add(a, b, 0);
 
                 tryBreak(serverWorld, target, player, stack);
             }
@@ -102,7 +104,6 @@ public class ShardPickaxeItem extends Item {
         BlockState state = world.getBlockState(pos);
         if (state.isAir()) return;
         if (state.getHardness(world, pos) < 0) return;
-        if (!stack.isSuitableFor(state)) return;
 
         world.breakBlock(pos, true, player);
     }
@@ -115,9 +116,10 @@ public class ShardPickaxeItem extends Item {
         tooltip.add(Text.literal("Unbreaking III").formatted(Formatting.GRAY));
         tooltip.add(Text.literal("Mending").formatted(Formatting.GRAY));
         tooltip.add(Text.literal("Self Destruct: 24h").formatted(Formatting.RED));
+        tooltip.add(Text.literal("3K Shards").formatted(Formatting.GRAY));
         tooltip.add(Text.empty());
         tooltip.add(Text.literal("When in Main Hand:").formatted(Formatting.GRAY));
         tooltip.add(Text.literal(" 6 Attack Damage").formatted(Formatting.DARK_GREEN));
         tooltip.add(Text.literal(" 1.2 Attack Speed").formatted(Formatting.DARK_GREEN));
     }
-    }
+            }
