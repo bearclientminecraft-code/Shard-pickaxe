@@ -4,7 +4,9 @@
   "version": "${version}",
   "name": "Shard Pickaxe",
   "description": "Shard Pickaxe with 3x3 mining and 24h self-destruct",
-  "authors": ["You"],
+  "authors": [
+    "You"
+  ],
   "license": "MIT",
   "environment": "*",
   "entrypoints": {
@@ -14,7 +16,7 @@
   },
   "depends": {
     "fabricloader": ">=0.16.0",
-    "minecraft": "\~1.21.11",
+    "minecraft": "~1.21.11",
     "java": ">=21",
     "fabric-api": "*"
   }
